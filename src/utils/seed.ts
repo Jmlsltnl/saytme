@@ -5,6 +5,16 @@ export const seedDatabase = async () => {
   const toastId = toast.loading("Demo məlumatlar yüklənir...");
 
   try {
+    // Check for valid session first
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error("Session error:", sessionError);
+      throw new Error("Sessiya tapılmadı. Zəhmət olmasa səhifəni yeniləyin və yenidən giriş edin.");
+    }
+
+    console.log("Starting seed with user:", session.user.id);
+
     // 1. Insert Categories
     const categories = [
       { name_az: "Sosial Media", slug: "social-media", color_theme: "blue" },
@@ -18,7 +28,10 @@ export const seedDatabase = async () => {
       .upsert(categories, { onConflict: "slug" })
       .select();
 
-    if (catError) throw new Error("Kateqoriya xətası: " + catError.message);
+    if (catError) {
+      console.error("Category seed error details:", catError);
+      throw new Error("Kateqoriya xətası: " + catError.message + " (Details: " + catError.details + ")");
+    }
 
     if (!insertedCategories) throw new Error("Kateqoriyalar yaradılmadı");
 
