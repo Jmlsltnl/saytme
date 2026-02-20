@@ -1,5 +1,4 @@
 import { Search } from "lucide-react";
-import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
 import { ModeToggle } from "./mode-toggle";
 import { useEffect, useState } from "react";
@@ -80,9 +79,6 @@ export const Navbar = ({ onSearchChange, searchValue }: NavbarProps) => {
 
         <div className="flex items-center gap-2">
           <ModeToggle />
-          <Button className="rounded-full px-6 shadow-md hover:shadow-lg transition-all hidden sm:flex">
-            Abunə ol
-          </Button>
         </div>
       </div>
     </nav>
