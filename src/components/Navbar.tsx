@@ -16,10 +16,15 @@ export const Navbar = ({ onSearchChange, searchValue }: NavbarProps) => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const { data } = await supabase.from('site_settings').select('site_name, logo_url').single();
-      if (data) {
-        if (data.site_name) setSiteName(data.site_name);
-        if (data.logo_url) setLogoUrl(data.logo_url);
+      try {
+        const { data, error } = await supabase.from('site_settings').select('site_name, logo_url').maybeSingle();
+        if (!error && data) {
+          if (data.site_name) setSiteName(data.site_name);
+          if (data.logo_url) setLogoUrl(data.logo_url);
+        }
+      } catch (e) {
+        // Silently fail if table doesn't exist yet
+        console.log("Using default site settings");
       }
     };
     fetchSettings();

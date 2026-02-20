@@ -50,6 +50,10 @@ VALUES ('images', 'images', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. Storage Policies (Allow Public Read, Auth Upload)
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Upload" ON storage.objects;
+DROP POLICY IF EXISTS "Auth Delete" ON storage.objects;
+
 CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'images' );
 CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK ( bucket_id = 'images' );
 CREATE POLICY "Auth Delete" ON storage.objects FOR DELETE TO authenticated USING ( bucket_id = 'images' );
@@ -123,16 +127,27 @@ const Admin = () => {
   };
 
   const fetchSettings = async () => {
-    const { data, error } = await supabase.from('site_settings').select('*').single();
-    if (error) {
-      console.log("Settings table might be missing");
-    } else if (data) {
-      setSettingsId(data.id);
-      setSiteName(data.site_name || "");
-      setSiteDesc(data.site_description || "");
-      setFooterText(data.footer_text || "");
-      setCurrentLogo(data.logo_url);
-      setCurrentFavicon(data.favicon_url);
+    try {
+      const { data, error } = await supabase.from('site_settings').select('*').maybeSingle();
+      
+      if (error) {
+        // Only show dialog if it's a "relation does not exist" error (code 42P01)
+        if (error.code === '42P01') {
+          console.warn("Site settings table missing. Showing setup dialog.");
+          setShowSqlDialog(true);
+        } else {
+          console.error("Error fetching settings:", error);
+        }
+      } else if (data) {
+        setSettingsId(data.id);
+        setSiteName(data.site_name || "");
+        setSiteDesc(data.site_description || "");
+        setFooterText(data.footer_text || "");
+        setCurrentLogo(data.logo_url);
+        setCurrentFavicon(data.favicon_url);
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching settings:", err);
     }
   };
 

@@ -35,11 +35,11 @@ const Index = () => {
         
         if (postsData) setPosts(postsData as unknown as Post[]);
 
-        // Fetch Settings
+        // Fetch Settings (Safely)
         const { data: settingsData } = await supabase
           .from('site_settings')
           .select('*')
-          .single();
+          .maybeSingle();
         
         if (settingsData) setSettings(settingsData);
       } catch (error) {
