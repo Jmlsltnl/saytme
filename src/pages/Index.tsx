@@ -18,6 +18,7 @@ const Index = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchPosts();
@@ -42,9 +43,11 @@ const Index = () => {
     }
   };
 
-  const filteredPosts = activeCategory === "all" 
-    ? posts 
-    : posts.filter(post => post.categories?.slug === activeCategory);
+  const filteredPosts = posts.filter(post => {
+    const matchesCategory = activeCategory === "all" || post.categories?.slug === activeCategory;
+    const matchesSearch = post.title_az.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-[#050505] selection:bg-cyan-500/30">
@@ -53,19 +56,25 @@ const Index = () => {
         <meta name="description" content="Real marketinq nümunələri və strategiyaları. Dünyanın ən böyük şirkətlərinin uğur hekayələri." />
       </Helmet>
       
-      <Navbar />
+      <Navbar onSearchChange={setSearchQuery} searchValue={searchQuery} />
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-32 pb-20">
-        <FilterBar />
+        <FilterBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
         
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
           </div>
-        ) : posts.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           <div className="text-center py-20">
-            <h2 className="text-2xl font-bold text-white mb-4">Hələlik heç bir məqalə yoxdur</h2>
-            <p className="text-gray-400">Zəhmət olmasa Supabase bazasına məlumat əlavə edin.</p>
+            <h2 className="text-2xl font-bold text-white mb-4">
+              {posts.length === 0 ? "Hələlik heç bir məqalə yoxdur" : "Axtarışa uyğun nəticə tapılmadı"}
+            </h2>
+            <p className="text-gray-400">
+              {posts.length === 0 
+                ? "Zəhmət olmasa admin panelindən məlumat əlavə edin." 
+                : "Açar sözləri dəyişərək yenidən cəhd edin."}
+            </p>
           </div>
         ) : (
           /* Bento Grid */

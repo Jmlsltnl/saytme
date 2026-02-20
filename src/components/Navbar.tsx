@@ -1,12 +1,18 @@
-import { Search, MonitorPlay } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "./ui/button";
+import { Link } from "react-router-dom";
 
-export const Navbar = () => {
+interface NavbarProps {
+  onSearchChange?: (value: string) => void;
+  searchValue?: string;
+}
+
+export const Navbar = ({ onSearchChange, searchValue }: NavbarProps) => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300 bg-[#050505]/80 backdrop-blur-md border-b border-white/5">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Logo */}
-        <div className="flex items-center gap-2 group cursor-pointer">
+        <Link to="/" className="flex items-center gap-2 group cursor-pointer">
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-gray-800 to-black border border-white/10 shadow-lg overflow-hidden group-hover:scale-105 transition-transform">
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-white to-gray-400">M</span>
             <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -15,7 +21,7 @@ export const Navbar = () => {
             <span className="text-sm font-bold tracking-wider text-white leading-none">MARKETİNQ</span>
             <span className="text-xs font-medium text-gray-400 tracking-wider leading-none">NÜMUNƏLƏRİ</span>
           </div>
-        </div>
+        </Link>
 
         {/* Search Bar */}
         <div className="hidden md:flex flex-1 max-w-xl relative group">
@@ -24,7 +30,9 @@ export const Navbar = () => {
           </div>
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Axtarış..."
+            value={searchValue || ""}
+            onChange={(e) => onSearchChange?.(e.target.value)}
             className="w-full h-12 pl-11 pr-4 bg-white/5 border border-white/10 rounded-full text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 focus:shadow-[0_0_15px_rgba(0,229,255,0.1)] transition-all"
           />
         </div>
