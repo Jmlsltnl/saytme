@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Loader2, Upload, Trash2, ExternalLink, Database as DbIcon } from "lucide-react";
+import { Loader2, Upload, Trash2, ExternalLink, Database as DbIcon, AlertCircle } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { seedDatabase } from "@/utils/seed";
 
@@ -19,6 +20,9 @@ const Admin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedError, setSeedError] = useState<string | null>(null);
+  
   const [categories, setCategories] = useState<Category[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   
@@ -46,12 +50,14 @@ const Admin = () => {
   };
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('*');
+    const { data, error } = await supabase.from('categories').select('*');
+    if (error) console.error("Error fetching categories:", error);
     if (data) setCategories(data);
   };
 
   const fetchPosts = async () => {
-    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    if (error) console.error("Error fetching posts:", error);
     if (data) setPosts(data);
   };
 
@@ -137,10 +143,22 @@ const Admin = () => {
 
   const handleSeed = async () => {
     if (!confirm("Demo məlumatlar yüklənsin? Bu mövcud kateqoriyaları yeniləyə bilər.")) return;
-    const success = await seedDatabase();
-    if (success) {
-      fetchCategories();
-      fetchPosts();
+    
+    setSeeding(true);
+    setSeedError(null);
+    
+    try {
+      const success = await seedDatabase();
+      if (success) {
+        fetchCategories();
+        fetchPosts();
+      } else {
+        setSeedError("Məlumatlar yüklənə bilmədi. Zəhmət olmasa verilənlər bazası icazələrini yoxlayın.");
+      }
+    } catch (error: any) {
+      setSeedError(error.message);
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -151,18 +169,35 @@ const Admin = () => {
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-6 pt-32">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={handleSeed} className="bg-cyan-900/20 text-cyan-400 hover:bg-cyan-900/40 border border-cyan-500/30">
-              <DbIcon className="mr-2 h-4 w-4" />
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button 
+              variant="secondary" 
+              onClick={handleSeed} 
+              disabled={seeding}
+              className="bg-cyan-900/20 text-cyan-400 hover:bg-cyan-900/40 border border-cyan-500/30 w-full md:w-auto"
+            >
+              {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DbIcon className="mr-2 h-4 w-4" />}
               Demo Data Yüklə
             </Button>
-            <Button variant="outline" onClick={() => supabase.auth.signOut().then(() => navigate('/'))}>
+            <Button variant="outline" onClick={() => supabase.auth.signOut().then(() => navigate('/'))} className="w-full md:w-auto">
               Çıxış
             </Button>
           </div>
         </div>
+
+        {seedError && (
+          <Alert variant="destructive" className="mb-6 border-red-500/50 bg-red-900/10 text-red-200">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Xəta</AlertTitle>
+            <AlertDescription>
+              {seedError}
+              <br/>
+              <span className="text-xs opacity-80 block mt-1">Supabase SQL Editor-da RLS (Row Level Security) siyasətlərini yeniləməlisiniz.</span>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* CREATE POST FORM */}
