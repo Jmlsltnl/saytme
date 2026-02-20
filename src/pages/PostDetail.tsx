@@ -219,7 +219,8 @@ const PostDetail = () => {
         )}
 
         {/* Content Body */}
-        <article className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl animate-in fade-in duration-700 delay-200">
+        {/* Added break-words, w-full, overflow-hidden to fix responsiveness */}
+        <article className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl prose-img:w-full animate-in fade-in duration-700 delay-200 break-words w-full overflow-hidden">
           <div 
             dangerouslySetInnerHTML={{ __html: post.content_html }} 
           />

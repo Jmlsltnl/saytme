@@ -40,7 +40,30 @@ type Category = Database['public']['Tables']['categories']['Row'];
 type Post = Database['public']['Tables']['posts']['Row'];
 type Settings = Database['public']['Tables']['site_settings']['Row'];
 
-// --- Helper Components ---
+// --- Helper Utilities ---
+
+const slugify = (text: string) => {
+  const map: Record<string, string> = {
+    'ə': 'e', 'Ə': 'e',
+    'ğ': 'g', 'Ğ': 'g',
+    'ş': 's', 'Ş': 's',
+    'ü': 'u', 'Ü': 'u',
+    'ö': 'o', 'Ö': 'o',
+    'ı': 'i', 'I': 'i',
+    'ç': 'c', 'Ç': 'c',
+    'İ': 'i'
+  };
+  
+  return text
+    .split('')
+    .map(char => map[char] || char)
+    .join('')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Xüsusi simvolları sil
+    .trim()
+    .replace(/\s+/g, '-') // Boşluqları tire ilə əvəz et
+    .replace(/-+/g, '-'); // Təkrar tireləri sil
+};
 
 const StatCard = ({ title, value, icon: Icon, description }: { title: string, value: string | number, icon: any, description?: string }) => (
   <Card>
@@ -174,6 +197,15 @@ const Admin = () => {
     const [formSeoDesc, setFormSeoDesc] = useState("");
     const [uploading, setUploading] = useState(false);
 
+    // Auto-generate slug when title changes
+    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      setFormTitle(val);
+      if (!isEditing) {
+        setFormSlug(slugify(val));
+      }
+    };
+
     const resetForm = () => {
       setIsEditing(false); setEditId(null);
       setFormTitle(""); setFormSlug(""); setFormContent(""); setFormCat("");
@@ -225,9 +257,11 @@ const Admin = () => {
            thumbUrl = data.publicUrl;
         }
 
+        const finalSlug = formSlug || slugify(formTitle);
+
         const payload = {
           title_az: formTitle,
-          slug: formSlug || formTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          slug: finalSlug,
           content_html: formContent,
           category_id: formCat,
           read_time_az: formTime,
@@ -277,8 +311,14 @@ const Admin = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid gap-2">
                   <Label>Başlıq</Label>
-                  <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} required />
+                  <Input value={formTitle} onChange={handleTitleChange} required />
                 </div>
+                
+                <div className="grid gap-2">
+                  <Label>Slug (URL Linki)</Label>
+                  <Input value={formSlug} onChange={(e) => setFormSlug(e.target.value)} placeholder="avtomatik-yaradilir" required />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Kateqoriya</Label>
@@ -383,9 +423,11 @@ const Admin = () => {
 
     const addCategory = async (e: React.FormEvent) => {
       e.preventDefault();
+      const finalSlug = slug || slugify(name);
+      
       const { error } = await supabase.from('categories').insert({
         name_az: name,
-        slug: slug || name.toLowerCase(),
+        slug: finalSlug,
         color_theme: color
       });
       if (error) toast.error(error.message);
@@ -413,7 +455,7 @@ const Admin = () => {
             <form onSubmit={addCategory} className="space-y-4">
               <div className="grid gap-2">
                 <Label>Ad</Label>
-                <Input value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase()); }} required />
+                <Input value={name} onChange={(e) => { setName(e.target.value); setSlug(slugify(e.target.value)); }} required />
               </div>
               <div className="grid gap-2">
                 <Label>Slug (Link üçün)</Label>
