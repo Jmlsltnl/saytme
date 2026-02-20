@@ -35,11 +35,11 @@ const Index = () => {
         
         if (postsData) setPosts(postsData as unknown as Post[]);
 
-        // Fetch Settings (Safely)
+        // Fetch Settings - Using updated_at to match Admin/Navbar logic
         const { data: settingsData } = await supabase
           .from('site_settings')
           .select('*')
-          .order('created_at', { ascending: false })
+          .order('updated_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         
