@@ -8,13 +8,45 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Upload, Trash2, ExternalLink, Database as DbIcon, AlertCircle } from "lucide-react";
+import { Loader2, Upload, Trash2, ExternalLink, Database as DbIcon, AlertCircle, Copy, Check } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { seedDatabase } from "@/utils/seed";
 
 type Category = Database['public']['Tables']['categories']['Row'];
 type Post = Database['public']['Tables']['posts']['Row'];
+
+const SQL_FIX_CODE = `-- Bütün bunları kopyalayıb Supabase SQL Editor-da icra edin
+
+-- 1. RLS (Təhlükəsizlik) aktivləşdir
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+
+-- 2. Köhnə siyasətləri sil (Təmizlik)
+DROP POLICY IF EXISTS "Public read access" ON public.categories;
+DROP POLICY IF EXISTS "Auth all access" ON public.categories;
+DROP POLICY IF EXISTS "Public read access" ON public.posts;
+DROP POLICY IF EXISTS "Auth all access" ON public.posts;
+DROP POLICY IF EXISTS "Public categories are viewable by everyone" ON public.categories;
+DROP POLICY IF EXISTS "Authenticated users can insert categories" ON public.categories;
+DROP POLICY IF EXISTS "Authenticated users can update categories" ON public.categories;
+DROP POLICY IF EXISTS "Authenticated users can delete categories" ON public.categories;
+
+-- 3. Yeni icazələr ver
+-- Kateqoriyalar: Hamı görə bilər, yalnız admin dəyişə bilər
+CREATE POLICY "Public read access" ON public.categories FOR SELECT USING (true);
+CREATE POLICY "Auth all access" ON public.categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Məqalələr: Hamı görə bilər, yalnız admin dəyişə bilər
+CREATE POLICY "Public read access" ON public.posts FOR SELECT USING (true);
+CREATE POLICY "Auth all access" ON public.posts FOR ALL TO authenticated USING (true) WITH CHECK (true);`;
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -22,6 +54,8 @@ const Admin = () => {
   const [submitting, setSubmitting] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [seedError, setSeedError] = useState<string | null>(null);
+  const [showSqlDialog, setShowSqlDialog] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -152,14 +186,23 @@ const Admin = () => {
       if (success) {
         fetchCategories();
         fetchPosts();
+        toast.success("Məlumatlar yükləndi! Səhifə yenilənir...");
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        setSeedError("Məlumatlar yüklənə bilmədi. Zəhmət olmasa verilənlər bazası icazələrini yoxlayın.");
+        setSeedError("RLS İcazə xətası.");
       }
     } catch (error: any) {
       setSeedError(error.message);
     } finally {
       setSeeding(false);
     }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(SQL_FIX_CODE);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success("SQL kodu kopyalandı!");
   };
 
   if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">Loading...</div>;
@@ -190,11 +233,17 @@ const Admin = () => {
         {seedError && (
           <Alert variant="destructive" className="mb-6 border-red-500/50 bg-red-900/10 text-red-200">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Xəta</AlertTitle>
-            <AlertDescription>
-              {seedError}
-              <br/>
-              <span className="text-xs opacity-80 block mt-1">Supabase SQL Editor-da RLS (Row Level Security) siyasətlərini yeniləməlisiniz.</span>
+            <AlertTitle>İcazə Xətası (RLS)</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2">
+              <span>Verilənlər bazasına yazmaq üçün icazəniz yoxdur. Supabase-də qaydaları yeniləməlisiniz.</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-fit bg-red-950/50 border-red-500/50 hover:bg-red-900/50 text-white"
+                onClick={() => setShowSqlDialog(true)}
+              >
+                Həll yolunu göstər (SQL)
+              </Button>
             </AlertDescription>
           </Alert>
         )}
@@ -299,6 +348,38 @@ const Admin = () => {
             </div>
           </section>
         </div>
+
+        {/* SQL FIX DIALOG */}
+        <Dialog open={showSqlDialog} onOpenChange={setShowSqlDialog}>
+          <DialogContent className="glass-card border-white/10 text-white max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Verilənlər Bazası İcazələrini Düzəlt</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Aşağıdakı SQL kodunu <b>Supabase Dashboard {'>'} SQL Editor</b> səhifəsinə kopyalayın və icra edin (Run düyməsi).
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="relative mt-4">
+              <pre className="p-4 rounded-xl bg-black/50 border border-white/10 text-xs font-mono text-green-400 overflow-x-auto h-64 select-all">
+                {SQL_FIX_CODE}
+              </pre>
+              <Button 
+                size="sm" 
+                className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white border-white/10"
+                onClick={copyToClipboard}
+              >
+                {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
+                {copied ? "Kopyalandı" : "Kopyala"}
+              </Button>
+            </div>
+            
+            <div className="flex justify-end mt-4">
+              <Button onClick={() => setShowSqlDialog(false)} variant="secondary">
+                Bağla
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
