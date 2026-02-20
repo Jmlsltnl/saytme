@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Upload, Trash2, ExternalLink } from "lucide-react";
+import { Loader2, Upload, Trash2, ExternalLink, Database as DbIcon } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { seedDatabase } from "@/utils/seed";
 
 type Category = Database['public']['Tables']['categories']['Row'];
 type Post = Database['public']['Tables']['posts']['Row'];
@@ -134,6 +135,15 @@ const Admin = () => {
     }
   };
 
+  const handleSeed = async () => {
+    if (!confirm("Demo məlumatlar yüklənsin? Bu mövcud kateqoriyaları yeniləyə bilər.")) return;
+    const success = await seedDatabase();
+    if (success) {
+      fetchCategories();
+      fetchPosts();
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">Loading...</div>;
 
   return (
@@ -143,9 +153,15 @@ const Admin = () => {
       <main className="max-w-4xl mx-auto px-6 pt-32">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
-          <Button variant="outline" onClick={() => supabase.auth.signOut().then(() => navigate('/'))}>
-            Çıxış
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleSeed} className="bg-cyan-900/20 text-cyan-400 hover:bg-cyan-900/40 border border-cyan-500/30">
+              <DbIcon className="mr-2 h-4 w-4" />
+              Demo Data Yüklə
+            </Button>
+            <Button variant="outline" onClick={() => supabase.auth.signOut().then(() => navigate('/'))}>
+              Çıxış
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
