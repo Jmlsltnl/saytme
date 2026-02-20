@@ -21,6 +21,9 @@ export interface Database {
           updated_at: string
           hero_title: string | null
           hero_description: string | null
+          google_analytics_id: string | null
+          google_tag_manager_id: string | null
+          google_search_console_code: string | null
         }
         Insert: {
           id?: string
@@ -33,6 +36,9 @@ export interface Database {
           updated_at?: string
           hero_title?: string | null
           hero_description?: string | null
+          google_analytics_id?: string | null
+          google_tag_manager_id?: string | null
+          google_search_console_code?: string | null
         }
         Update: {
           id?: string
@@ -45,6 +51,9 @@ export interface Database {
           updated_at?: string
           hero_title?: string | null
           hero_description?: string | null
+          google_analytics_id?: string | null
+          google_tag_manager_id?: string | null
+          google_search_console_code?: string | null
         }
       }
       categories: {

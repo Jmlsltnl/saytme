@@ -27,7 +27,8 @@ import {
   BarChart3,
   Globe,
   X,
-  Megaphone
+  Megaphone,
+  LineChart
 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { SEO } from "@/components/SEO";
@@ -294,39 +295,6 @@ const Admin = () => {
                 <div className="grid gap-2">
                   <Label>Məzmun</Label>
                   <div className="prose-editor-wrapper">
-                    {/* Custom CSS for Quill Dark Mode compatibility */}
-                    <style>{`
-                      .prose-editor-wrapper .ql-toolbar {
-                        border-color: hsl(var(--border));
-                        border-top-left-radius: 0.5rem;
-                        border-top-right-radius: 0.5rem;
-                        background-color: hsl(var(--muted));
-                      }
-                      .prose-editor-wrapper .ql-container {
-                        border-color: hsl(var(--border));
-                        border-bottom-left-radius: 0.5rem;
-                        border-bottom-right-radius: 0.5rem;
-                        background-color: hsl(var(--background));
-                        color: hsl(var(--foreground));
-                        font-family: inherit;
-                        font-size: 1rem;
-                        min-height: 250px;
-                      }
-                      .prose-editor-wrapper .ql-picker-label {
-                        color: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-stroke {
-                        stroke: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-fill {
-                        fill: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-picker-options {
-                        background-color: hsl(var(--popover));
-                        color: hsl(var(--popover-foreground));
-                        border-color: hsl(var(--border));
-                      }
-                    `}</style>
                     <ReactQuill 
                       theme="snow"
                       value={formContent} 
@@ -495,6 +463,10 @@ const Admin = () => {
     const [hTitle, setHTitle] = useState(settings?.hero_title || "");
     const [hDesc, setHDesc] = useState(settings?.hero_description || "");
     const [sFooter, setSFooter] = useState(settings?.footer_text || "");
+    const [gaId, setGaId] = useState(settings?.google_analytics_id || "");
+    const [gtmId, setGtmId] = useState(settings?.google_tag_manager_id || "");
+    const [gscCode, setGscCode] = useState(settings?.google_search_console_code || "");
+    
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [favFile, setFavFile] = useState<File | null>(null);
     const [saving, setSaving] = useState(false);
@@ -506,6 +478,9 @@ const Admin = () => {
             setSFooter(settings.footer_text || "");
             setHTitle(settings.hero_title || "");
             setHDesc(settings.hero_description || "");
+            setGaId(settings.google_analytics_id || "");
+            setGtmId(settings.google_tag_manager_id || "");
+            setGscCode(settings.google_search_console_code || "");
         }
     }, [settings]);
 
@@ -537,7 +512,10 @@ const Admin = () => {
           hero_description: hDesc,
           footer_text: sFooter,
           logo_url: logoUrl,
-          favicon_url: favUrl
+          favicon_url: favUrl,
+          google_analytics_id: gaId || null,
+          google_tag_manager_id: gtmId || null,
+          google_search_console_code: gscCode || null
         };
 
         let targetId = settings?.id;
@@ -563,11 +541,7 @@ const Admin = () => {
         setFavFile(null);
       } catch (e: any) {
         console.error(e);
-        if (e.message?.includes("hero_description") || e.message?.includes("column")) {
-             toast.error("Xəta: Bazada yeni sütunlar yoxdur. Zəhmət olmasa SQL əmrini işlədin.");
-        } else {
-             toast.error("Xəta: " + e.message);
-        }
+        toast.error("Xəta: " + e.message);
       } finally {
         setSaving(false);
       }
@@ -608,6 +582,24 @@ const Admin = () => {
                  </div>
               </div>
               
+              {/* Integrations */}
+              <div className="space-y-4">
+                 <h3 className="font-semibold flex items-center gap-2 border-b pb-2"><LineChart className="w-4 h-4" /> İnteqrasiyalar (SEO & Analitika)</h3>
+                 <div className="grid gap-2">
+                   <Label>Google Analytics ID (G-XXXXXXX)</Label>
+                   <Input value={gaId} onChange={(e) => setGaId(e.target.value)} placeholder="G-..." />
+                 </div>
+                 <div className="grid gap-2">
+                   <Label>Google Tag Manager ID (GTM-XXXXXXX)</Label>
+                   <Input value={gtmId} onChange={(e) => setGtmId(e.target.value)} placeholder="GTM-..." />
+                 </div>
+                 <div className="grid gap-2">
+                   <Label>Google Search Console (Verification Code)</Label>
+                   <Input value={gscCode} onChange={(e) => setGscCode(e.target.value)} placeholder="Sadəcə 'content' hissəsi. Məsələn: abc123xyz..." />
+                   <p className="text-xs text-muted-foreground">meta name="google-site-verification" teqinin content dəyəri.</p>
+                 </div>
+              </div>
+
               {/* Assets */}
               <div className="space-y-4">
                  <h3 className="font-semibold flex items-center gap-2 border-b pb-2"><ImageIcon className="w-4 h-4" /> Şəkillər</h3>
