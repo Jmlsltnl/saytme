@@ -19,6 +19,8 @@ export interface Database {
           footer_text: string | null
           social_links: Json | null
           updated_at: string
+          hero_title: string | null
+          hero_description: string | null
         }
         Insert: {
           id?: string
@@ -29,6 +31,8 @@ export interface Database {
           footer_text?: string | null
           social_links?: Json | null
           updated_at?: string
+          hero_title?: string | null
+          hero_description?: string | null
         }
         Update: {
           id?: string
@@ -39,6 +43,8 @@ export interface Database {
           footer_text?: string | null
           social_links?: Json | null
           updated_at?: string
+          hero_title?: string | null
+          hero_description?: string | null
         }
       }
       categories: {

@@ -26,7 +26,8 @@ import {
   Save, 
   BarChart3,
   Globe,
-  X
+  X,
+  Megaphone
 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { SEO } from "@/components/SEO";
@@ -293,45 +294,12 @@ const Admin = () => {
                 <div className="grid gap-2">
                   <Label>Məzmun</Label>
                   <div className="prose-editor-wrapper">
-                    {/* Custom CSS for Quill Dark Mode compatibility */}
-                    <style>{`
-                      .prose-editor-wrapper .ql-toolbar {
-                        border-color: hsl(var(--border));
-                        border-top-left-radius: 0.5rem;
-                        border-top-right-radius: 0.5rem;
-                        background-color: hsl(var(--muted));
-                      }
-                      .prose-editor-wrapper .ql-container {
-                        border-color: hsl(var(--border));
-                        border-bottom-left-radius: 0.5rem;
-                        border-bottom-right-radius: 0.5rem;
-                        background-color: hsl(var(--background));
-                        color: hsl(var(--foreground));
-                        font-family: inherit;
-                        font-size: 1rem;
-                        min-height: 250px;
-                      }
-                      .prose-editor-wrapper .ql-picker-label {
-                        color: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-stroke {
-                        stroke: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-fill {
-                        fill: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-picker-options {
-                        background-color: hsl(var(--popover));
-                        color: hsl(var(--popover-foreground));
-                        border-color: hsl(var(--border));
-                      }
-                    `}</style>
                     <ReactQuill 
                       theme="snow"
                       value={formContent} 
                       onChange={setFormContent} 
                       modules={quillModules}
-                      className="h-64 mb-12" // mb-12 to account for toolbar height
+                      className="h-64 mb-12"
                     />
                   </div>
                 </div>
@@ -489,20 +457,22 @@ const Admin = () => {
   };
 
   const SettingsManager = () => {
-    // Initialize state with props, but also sync with useEffect
     const [sName, setSName] = useState(settings?.site_name || "");
     const [sDesc, setSDesc] = useState(settings?.site_description || "");
+    const [hTitle, setHTitle] = useState(settings?.hero_title || "");
+    const [hDesc, setHDesc] = useState(settings?.hero_description || "");
     const [sFooter, setSFooter] = useState(settings?.footer_text || "");
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [favFile, setFavFile] = useState<File | null>(null);
     const [saving, setSaving] = useState(false);
 
-    // FIX: Sync state when settings are loaded/updated from parent
     useEffect(() => {
         if (settings) {
             setSName(settings.site_name || "");
             setSDesc(settings.site_description || "");
             setSFooter(settings.footer_text || "");
+            setHTitle(settings.hero_title || "");
+            setHDesc(settings.hero_description || "");
         }
     }, [settings]);
 
@@ -513,7 +483,6 @@ const Admin = () => {
         let logoUrl = settings?.logo_url;
         let favUrl = settings?.favicon_url;
 
-        // Upload Helper with Sanitization
         const upload = async (f: File) => {
            const fileExt = f.name.split('.').pop();
            const randomName = Math.random().toString(36).substring(7);
@@ -531,15 +500,15 @@ const Admin = () => {
         const payload = {
           site_name: sName,
           site_description: sDesc,
+          hero_title: hTitle,
+          hero_description: hDesc,
           footer_text: sFooter,
           logo_url: logoUrl,
           favicon_url: favUrl
         };
 
-        // Handle create/update logic robustly
         let targetId = settings?.id;
         
-        // If we don't have an ID in state, check DB one last time
         if (!targetId) {
              const { data } = await supabase.from('site_settings').select('id').order('created_at', {ascending: false}).limit(1).maybeSingle();
              if (data) targetId = data.id;
@@ -554,12 +523,9 @@ const Admin = () => {
         }
         
         await fetchSettings();
-        
-        // FIX: Don't reload page, dispatch event instead
         window.dispatchEvent(new Event('settings-updated'));
         
         toast.success("Ayarlar yadda saxlanıldı!");
-        // Clear file inputs
         setLogoFile(null);
         setFavFile(null);
       } catch (e: any) {
@@ -574,36 +540,57 @@ const Admin = () => {
         <Card>
           <CardHeader>
              <CardTitle>Sayt Ayarları</CardTitle>
-             <CardDescription>Logo, Favicon və SEO məlumatlarını yeniləyin.</CardDescription>
+             <CardDescription>Logo, Favicon, SEO və Əsas Səhifə məlumatlarını yeniləyin.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSave} className="space-y-6">
-              <div className="grid gap-2">
-                <Label>Saytın Adı</Label>
-                <Input value={sName} onChange={(e) => setSName(e.target.value)} />
+            <form onSubmit={handleSave} className="space-y-8">
+              {/* Main Info */}
+              <div className="space-y-4">
+                 <h3 className="font-semibold flex items-center gap-2 border-b pb-2"><Settings className="w-4 h-4" /> Ümumi Məlumatlar</h3>
+                 <div className="grid gap-2">
+                   <Label>Saytın Adı (SEO Title)</Label>
+                   <Input value={sName} onChange={(e) => setSName(e.target.value)} />
+                 </div>
+                 <div className="grid gap-2">
+                   <Label>Təsvir (SEO Description)</Label>
+                   <Textarea value={sDesc} onChange={(e) => setSDesc(e.target.value)} placeholder="Google axtarış nəticələri üçün..." />
+                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label>Təsvir (SEO Description)</Label>
-                <Textarea value={sDesc} onChange={(e) => setSDesc(e.target.value)} />
+
+              {/* Homepage Hero */}
+              <div className="space-y-4">
+                 <h3 className="font-semibold flex items-center gap-2 border-b pb-2"><Megaphone className="w-4 h-4" /> Əsas Səhifə (Hero Section)</h3>
+                 <div className="grid gap-2">
+                   <Label>Giriş Başlığı (Hero Title)</Label>
+                   <Input value={hTitle} onChange={(e) => setHTitle(e.target.value)} placeholder="Əgər boş qalsa, Saytın Adı istifadə olunacaq" />
+                 </div>
+                 <div className="grid gap-2">
+                   <Label>Giriş Mətni (Hero Description)</Label>
+                   <Textarea value={hDesc} onChange={(e) => setHDesc(e.target.value)} placeholder="Əgər boş qalsa, SEO təsviri istifadə olunacaq" />
+                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-6">
-                 <div className="space-y-2">
-                    <Label>Logo</Label>
-                    <div className="border border-dashed rounded-lg p-4 text-center space-y-2">
-                       {settings?.logo_url ? (
-                         <img src={settings.logo_url} className="h-12 mx-auto object-contain" alt="Logo" />
-                       ) : <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground" />}
-                       <Input type="file" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="text-xs" accept="image/*" />
+              {/* Assets */}
+              <div className="space-y-4">
+                 <h3 className="font-semibold flex items-center gap-2 border-b pb-2"><ImageIcon className="w-4 h-4" /> Şəkillər</h3>
+                 <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                       <Label>Logo</Label>
+                       <div className="border border-dashed rounded-lg p-4 text-center space-y-2">
+                          {settings?.logo_url ? (
+                            <img src={settings.logo_url} className="h-12 mx-auto object-contain" alt="Logo" />
+                          ) : <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground" />}
+                          <Input type="file" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="text-xs" accept="image/*" />
+                       </div>
                     </div>
-                 </div>
-                 <div className="space-y-2">
-                    <Label>Favicon</Label>
-                    <div className="border border-dashed rounded-lg p-4 text-center space-y-2">
-                       {settings?.favicon_url ? (
-                         <img src={settings.favicon_url} className="h-8 w-8 mx-auto object-contain" alt="Favicon" />
-                       ) : <Globe className="h-8 w-8 mx-auto text-muted-foreground" />}
-                       <Input type="file" onChange={(e) => setFavFile(e.target.files?.[0] || null)} className="text-xs" accept="image/*" />
+                    <div className="space-y-2">
+                       <Label>Favicon</Label>
+                       <div className="border border-dashed rounded-lg p-4 text-center space-y-2">
+                          {settings?.favicon_url ? (
+                            <img src={settings.favicon_url} className="h-8 w-8 mx-auto object-contain" alt="Favicon" />
+                          ) : <Globe className="h-8 w-8 mx-auto text-muted-foreground" />}
+                          <Input type="file" onChange={(e) => setFavFile(e.target.files?.[0] || null)} className="text-xs" accept="image/*" />
+                       </div>
                     </div>
                  </div>
               </div>

@@ -92,10 +92,10 @@ const Index = () => {
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-32 pb-20">
         <div className="mb-12 text-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
            <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 pb-2">
-             {settings?.site_name || "Marketinq Nümunələri"}
+             {settings?.hero_title || settings?.site_name || "Marketinq Nümunələri"}
            </h1>
            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-             {settings?.site_description || "Real strategiyalar, uğur hekayələri və brendinq dərsləri."}
+             {settings?.hero_description || settings?.site_description || "Real strategiyalar, uğur hekayələri və brendinq dərsləri."}
            </p>
         </div>
 
