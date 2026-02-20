@@ -2,6 +2,18 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "https://qnpoftjwfwzgxmuzqauc.supabase.co/functions/v1/sitemap"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://qnpoftjwfwzgxmuzqauc.supabase.co/functions/v1/robots"
+    },
+    {
+      "source": "/llms.txt",
+      "destination": "https://qnpoftjwfwzgxmuzqauc.supabase.co/functions/v1/llms"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
