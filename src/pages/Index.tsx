@@ -39,6 +39,8 @@ const Index = () => {
         const { data: settingsData } = await supabase
           .from('site_settings')
           .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
         
         if (settingsData) setSettings(settingsData);
@@ -88,7 +90,7 @@ const Index = () => {
       <Navbar onSearchChange={setSearchQuery} searchValue={searchQuery} />
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 pt-32 pb-20">
-        <div className="mb-12 text-center space-y-4">
+        <div className="mb-12 text-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
            <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 pb-2">
              {settings?.site_name || "Marketinq Nümunələri"}
            </h1>
@@ -104,7 +106,7 @@ const Index = () => {
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
         ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-20 border border-dashed border-border rounded-3xl bg-muted/20">
+          <div className="text-center py-20 border border-dashed border-border rounded-3xl bg-muted/20 animate-in zoom-in-95 duration-300">
             <h2 className="text-2xl font-bold mb-4">
               {posts.length === 0 ? "Hələlik heç bir məqalə yoxdur" : "Axtarışa uyğun nəticə tapılmadı"}
             </h2>
@@ -116,7 +118,7 @@ const Index = () => {
           </div>
         ) : (
           /* Bento Grid */
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[300px]">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[300px] animate-in fade-in duration-500">
             {filteredPosts.map((post) => (
               <Link 
                 to={`/post/${post.slug}`}

@@ -41,7 +41,10 @@ export const SEO = ({
       <meta name="keywords" content={keywords.join(", ")} />
       <meta name="author" content={author} />
       <link rel="canonical" href={fullUrl} />
-      {favicon && <link rel="icon" href={favicon} />}
+      
+      {/* Dynamic Favicon Injection */}
+      {favicon && <link rel="icon" type="image/png" href={favicon} />}
+      {favicon && <link rel="shortcut icon" type="image/png" href={favicon} />}
 
       {/* --- Open Graph / Facebook --- */}
       <meta property="og:locale" content="az_AZ" />

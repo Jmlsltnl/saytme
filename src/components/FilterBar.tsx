@@ -23,15 +23,15 @@ export const FilterBar = ({ activeCategory, onCategoryChange }: FilterBarProps) 
   };
 
   return (
-    <div className="sticky top-20 z-40 py-6 mb-8 flex justify-center overflow-x-auto no-scrollbar">
-      <div className="flex items-center gap-2 p-1.5 rounded-full bg-background/80 backdrop-blur-xl border border-border shadow-lg whitespace-nowrap">
+    <div className="w-full flex justify-center mb-10 px-4">
+      <div className="flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
         <button
           onClick={() => onCategoryChange("all")}
           className={cn(
-            "px-6 py-2 rounded-full text-xs font-bold tracking-wider transition-all duration-300",
+            "px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border",
             activeCategory === "all"
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              ? "bg-primary text-primary-foreground border-primary shadow-md transform scale-105"
+              : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:bg-muted/50"
           )}
         >
           HAMISI
@@ -41,10 +41,10 @@ export const FilterBar = ({ activeCategory, onCategoryChange }: FilterBarProps) 
             key={cat.id}
             onClick={() => onCategoryChange(cat.slug)}
             className={cn(
-              "px-6 py-2 rounded-full text-xs font-bold tracking-wider transition-all duration-300 uppercase",
+              "px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 border capitalize",
               activeCategory === cat.slug
-                ? "bg-primary text-primary-foreground shadow-md"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                ? "bg-primary text-primary-foreground border-primary shadow-md transform scale-105"
+                : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground hover:bg-muted/50"
             )}
           >
             {cat.name_az}
