@@ -9,6 +9,7 @@ import { Clock, Calendar, ChevronLeft, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { az } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 type Post = Database['public']['Tables']['posts']['Row'] & {
   categories: Database['public']['Tables']['categories']['Row']
@@ -47,6 +48,14 @@ const PostDetail = () => {
     }
   };
 
+  const getBadgeStyles = (theme?: string) => {
+    switch (theme) {
+      case 'pink': return "bg-pink-500/10 text-pink-400 border-pink-500/20";
+      case 'yellow': return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
+      default: return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">Yüklənir...</div>;
   }
@@ -82,8 +91,8 @@ const PostDetail = () => {
         {/* Hero Section */}
         <div className="space-y-6 mb-12">
           <div className="flex items-center gap-4 text-sm">
-            <span className={`px-3 py-1 rounded-full border bg-${post.categories?.color_theme === 'pink' ? 'pink' : post.categories?.color_theme === 'yellow' ? 'yellow' : 'cyan'}-500/10 text-${post.categories?.color_theme === 'pink' ? 'pink' : post.categories?.color_theme === 'yellow' ? 'yellow' : 'cyan'}-400 border-${post.categories?.color_theme === 'pink' ? 'pink' : post.categories?.color_theme === 'yellow' ? 'yellow' : 'cyan'}-500/20`}>
-              {post.categories?.name_az}
+            <span className={cn("px-3 py-1 rounded-full border", getBadgeStyles(post.categories?.color_theme))}>
+              {post.categories?.name_az || 'Kateqoriya'}
             </span>
             <div className="flex items-center gap-1.5 text-gray-400">
               <Clock className="w-4 h-4" />
@@ -103,14 +112,16 @@ const PostDetail = () => {
         </div>
 
         {/* Featured Image */}
-        <div className="relative aspect-video rounded-3xl overflow-hidden mb-12 border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)] group">
-          <img 
-            src={post.thumbnail_url} 
-            alt={post.title_az}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-60" />
-        </div>
+        {post.thumbnail_url && (
+          <div className="relative aspect-video rounded-3xl overflow-hidden mb-12 border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)] group">
+            <img 
+              src={post.thumbnail_url} 
+              alt={post.title_az}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-60" />
+          </div>
+        )}
 
         {/* Content Body */}
         <article className="prose prose-invert prose-lg max-w-none">

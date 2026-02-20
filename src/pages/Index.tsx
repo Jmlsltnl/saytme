@@ -45,7 +45,8 @@ const Index = () => {
 
   const filteredPosts = posts.filter(post => {
     const matchesCategory = activeCategory === "all" || post.categories?.slug === activeCategory;
-    const matchesSearch = post.title_az.toLowerCase().includes(searchQuery.toLowerCase());
+    const title = post.title_az || "";
+    const matchesSearch = title.toLowerCase().includes((searchQuery || "").toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
