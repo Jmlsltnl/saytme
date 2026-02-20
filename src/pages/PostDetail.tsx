@@ -219,18 +219,19 @@ const PostDetail = () => {
         )}
 
         {/* Content Body */}
-        {/* Added prose-p:hyphens-none hyphens-none to prevent word breaking */}
+        {/* Added strict css rules to children to prevent hyphenation */}
         <article className="prose prose-lg dark:prose-invert max-w-none 
           prose-headings:font-bold prose-headings:tracking-tight 
           prose-p:leading-relaxed prose-p:text-muted-foreground/90 
-          prose-p:hyphens-none hyphens-none
           prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline
           prose-img:rounded-3xl prose-img:shadow-md prose-img:w-full prose-img:border prose-img:border-border/50
           prose-li:marker:text-primary 
           prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-muted/30 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-lg prose-blockquote:font-medium
           prose-strong:text-foreground prose-strong:font-bold
-          animate-in fade-in duration-700 delay-200 break-words w-full overflow-hidden">
+          animate-in fade-in duration-700 delay-200 w-full overflow-hidden">
           <div 
+            className="[&_*]:hyphens-none [&_*]:break-words [&_*]:text-justify md:[&_*]:text-left"
+            style={{ hyphens: 'none', WebkitHyphens: 'none', wordBreak: 'normal', overflowWrap: 'break-word' }}
             dangerouslySetInnerHTML={{ __html: post.content_html }} 
           />
         </article>
