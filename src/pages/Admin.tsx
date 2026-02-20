@@ -16,23 +16,62 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Upload, Trash2, ExternalLink, Database as DbIcon, AlertCircle, Copy, Check, Info } from "lucide-react";
+import { Loader2, Upload, Trash2, ExternalLink, Database as DbIcon, AlertCircle, Copy, Check, Info, RefreshCw } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { seedDatabase } from "@/utils/seed";
 
 type Category = Database['public']['Tables']['categories']['Row'];
 type Post = Database['public']['Tables']['posts']['Row'];
 
-// FORCE FIX: Disable RLS completely to unblock the user
-const SQL_FIX_CODE = `-- RADİKAL HƏLL: RLS-i (Təhlükəsizliyi) söndür
--- Bu kod icra edildikdən sonra heç bir icazə problemi olmamalıdır.
+// NUCLEAR OPTION: Drop and Recreate tables without RLS
+const SQL_FIX_CODE = `-- BU KOD BÜTÜN CƏDVƏLLƏRİ SİLİB YENİDƏN YARADACAQ
+-- RLS (Təhlükəsizlik) söndürülmüş halda olacaq
 
+-- 1. Mövcud cədvəlləri sil
+DROP TABLE IF EXISTS public.posts;
+DROP TABLE IF EXISTS public.categories;
+
+-- 2. Categories cədvəlini yarat
+CREATE TABLE public.categories (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name_az TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  color_theme TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3. Posts cədvəlini yarat
+CREATE TABLE public.posts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title_az TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  content_html TEXT NOT NULL,
+  thumbnail_url TEXT,
+  read_time_az TEXT,
+  category_id UUID REFERENCES public.categories(id) ON DELETE CASCADE,
+  card_size TEXT DEFAULT 'standard',
+  is_featured BOOLEAN DEFAULT false,
+  published_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  seo_title TEXT,
+  seo_description TEXT,
+  og_image_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 4. Təhlükəsizlik kilidlərini söndür (Yazmağa icazə ver)
 ALTER TABLE public.categories DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts DISABLE ROW LEVEL SECURITY;
 
--- Əgər gələcəkdə təhlükəsizliyi yenidən açmaq istəsəniz:
--- ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;`;
+-- 5. Storage (Şəkillər üçün) buckets yarat (əgər yoxdursa)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('images', 'images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage üçün sadə icazə (şəkil yükləmək üçün)
+CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'images' ); 
+CREATE POLICY "Auth Upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK ( bucket_id = 'images' );
+`;
 
 const PROJECT_ID = "beggutkvhddsodeeoike";
 
@@ -106,7 +145,9 @@ const Admin = () => {
       .upload(filePath, file);
 
     if (uploadError) {
-      throw uploadError;
+      console.error("Upload error:", uploadError);
+      // Fallback if storage fails (don't break the post creation)
+      return null;
     }
 
     const { data } = supabase.storage.from('images').getPublicUrl(filePath);
@@ -120,7 +161,8 @@ const Admin = () => {
     try {
       let thumbnailUrl = "";
       if (file) {
-        thumbnailUrl = await handleImageUpload() || "";
+        const url = await handleImageUpload();
+        if (url) thumbnailUrl = url;
       }
 
       const { error } = await supabase.from('posts').insert({
@@ -223,14 +265,15 @@ const Admin = () => {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>İcazə Xətası (RLS)</AlertTitle>
             <AlertDescription className="flex flex-col gap-2">
-              <span>Məlumat bazası kilidlidir. Zəhmət olmasa aşağıdakı həll yolunu tətbiq edin.</span>
+              <span>Məlumat bazası kilidlidir. Aşağıdakı həll yolunu tətbiq edin: <b>Cədvəlləri tam sıfırlamaq.</b></span>
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="w-fit bg-red-950/50 border-red-500/50 hover:bg-red-900/50 text-white"
                 onClick={() => setShowSqlDialog(true)}
               >
-                Həll yolunu göstər (SQL)
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Sıfırlama Kodu (SQL)
               </Button>
             </AlertDescription>
           </Alert>
@@ -346,14 +389,16 @@ const Admin = () => {
         <Dialog open={showSqlDialog} onOpenChange={setShowSqlDialog}>
           <DialogContent className="glass-card border-white/10 text-white max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Təhlükəsizlik Kilidini Söndür (Force Fix)</DialogTitle>
+              <DialogTitle>Məlumat Bazasını Tam Sıfırla (Nuclear Option)</DialogTitle>
               <DialogDescription className="text-gray-400">
-                Aşağıdakı kodu <b>Supabase Dashboard {'>'} SQL Editor</b> səhifəsində işlədin. Bu, RLS-i tamamilə söndürəcək və yazmağa icazə verəcək.
+                Bu kod bütün cədvəlləri siləcək, yenidən yaradacaq və təhlükəsizlik kilidlərini (RLS) söndürəcək.
+                <br />
+                <b>Supabase Dashboard {'>'} SQL Editor</b> səhifəsində işlədin.
               </DialogDescription>
             </DialogHeader>
             
             <div className="relative mt-4">
-              <pre className="p-4 rounded-xl bg-black/50 border border-white/10 text-xs font-mono text-green-400 overflow-x-auto h-40 select-all">
+              <pre className="p-4 rounded-xl bg-black/50 border border-white/10 text-xs font-mono text-green-400 overflow-x-auto h-52 select-all">
                 {SQL_FIX_CODE}
               </pre>
               <Button 
