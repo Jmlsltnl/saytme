@@ -17,38 +17,87 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
+    // 1. Sayt Ayarlarını ətraflı çək
     const { data: settings } = await supabaseClient
       .from('site_settings')
-      .select('site_name, site_description')
+      .select('*')
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
+    // 2. Kateqoriyaları çək
+    const { data: categories } = await supabaseClient
+      .from('categories')
+      .select('name_az, slug')
+      .order('name_az')
+
+    // 3. Məqalələri kateqoriyaları ilə birlikdə çək
     const { data: posts } = await supabaseClient
       .from('posts')
-      .select('title_az, slug, seo_description')
-      .order('created_at', { ascending: false })
-      .limit(10)
+      .select('title_az, slug, seo_description, published_at, category_id, categories(name_az)')
+      .order('published_at', { ascending: false })
 
-    let content = `# ${settings?.site_name || 'Sayt.me'}
+    // --- Məzmunun Formalaşdırılması ---
 
-## Haqqında
-${settings?.site_description || 'Bu sayt marketinq nümunələri və strategiyaları haqqındadır.'}
+    const siteName = settings?.site_name || 'Sayt.me';
+    const baseUrl = "https://sayt.me"; // Real domeninizi bura yazarsınız və ya settings-dən götürərsiniz
 
-## Son Məqalələr
-`;
+    let content = `# ${siteName} - Marketinq Bilik Bazası\n\n`;
 
-    posts?.forEach((post: any) => {
-      content += `
-- [${post.title_az}](/post/${post.slug}): ${post.seo_description || 'Ətraflı oxuyun.'}`;
-    });
+    // Giriş və Missiya
+    content += `> ${settings?.hero_title || 'Marketinq Nümunələri və Strategiyaları'}\n`;
+    content += `> ${settings?.hero_description || settings?.site_description || ''}\n\n`;
+
+    content += `## 💡 Sayt Haqqında\n`;
+    content += `Bu platforma marketinq mütəxəssisləri, sahibkarlar və tələbələr üçün real biznes strategiyaları, brendinq nümunələri (case-studies) və rəqəmsal marketinq analizləri təqdim edir.\n\n`;
+
+    // Müəllif
+    if (settings?.author_name) {
+      content += `## 👤 Müəllif\n`;
+      content += `**${settings.author_name}**\n`;
+      if (settings?.about_text) content += `${settings.about_text}\n`;
+      content += `\n`;
+    }
+
+    // Mövzular (Kateqoriyalar)
+    if (categories && categories.length > 0) {
+      content += `## 📂 Əsas Mövzular (Kateqoriyalar)\n`;
+      categories.forEach((cat: any) => {
+        content += `- **${cat.name_az}**: /?category=${cat.slug}\n`;
+      });
+      content += `\n`;
+    }
+
+    // Məqalələr (Detallı)
+    if (posts && posts.length > 0) {
+      content += `## 📝 Məqalələr və Analizlər\n\n`;
+      
+      posts.forEach((post: any) => {
+        const date = post.published_at ? new Date(post.published_at).toISOString().split('T')[0] : 'N/A';
+        const catName = post.categories?.name_az || 'Ümumi';
+        
+        content += `### ${post.title_az}\n`;
+        content += `- **URL:** ${baseUrl}/post/${post.slug}\n`;
+        content += `- **Kateqoriya:** ${catName}\n`;
+        content += `- **Tarix:** ${date}\n`;
+        if (post.seo_description) {
+          content += `- **Xülasə:** ${post.seo_description}\n`;
+        }
+        content += `\n---\n\n`;
+      });
+    }
+
+    // Footer
+    content += `Generated dynamically by Sayt.me Engine.\nLast Update: ${new Date().toISOString()}`;
 
     return new Response(content, {
       headers: { 
         ...corsHeaders,
-        "Content-Type": "text/plain; charset=utf-8" 
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "public, max-age=3600" // 1 saatlıq cache
       },
     })
   } catch (error) {
-    return new Response("Error generating llms.txt", { status: 500, headers: corsHeaders })
+    return new Response(`Error generating llms.txt: ${error.message}`, { status: 500, headers: corsHeaders })
   }
 })
