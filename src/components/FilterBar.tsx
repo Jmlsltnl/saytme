@@ -24,16 +24,15 @@ export const FilterBar = ({ activeCategory, onCategoryChange }: FilterBarProps) 
 
   return (
     <div className="sticky top-20 z-40 py-6 mb-8 flex justify-center overflow-x-auto no-scrollbar">
-      <div className="flex items-center gap-2 p-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/5 whitespace-nowrap">
+      <div className="flex items-center gap-2 p-1.5 rounded-full bg-background/80 backdrop-blur-xl border border-border shadow-lg whitespace-nowrap">
         <button
           onClick={() => onCategoryChange("all")}
           className={cn(
             "px-6 py-2 rounded-full text-xs font-bold tracking-wider transition-all duration-300",
             activeCategory === "all"
-              ? "bg-transparent text-white shadow-[0_0_15px_rgba(0,229,255,0.3)] border border-cyan-500/50 text-shadow-glow"
-              : "text-gray-400 hover:text-white hover:bg-white/5"
+              ? "bg-primary text-primary-foreground shadow-md"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
           )}
-          style={activeCategory === "all" ? { textShadow: "0 0 10px rgba(0, 229, 255, 0.5)" } : {}}
         >
           HAMISI
         </button>
@@ -44,10 +43,9 @@ export const FilterBar = ({ activeCategory, onCategoryChange }: FilterBarProps) 
             className={cn(
               "px-6 py-2 rounded-full text-xs font-bold tracking-wider transition-all duration-300 uppercase",
               activeCategory === cat.slug
-                ? "bg-transparent text-white shadow-[0_0_15px_rgba(0,229,255,0.3)] border border-cyan-500/50 text-shadow-glow"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             )}
-            style={activeCategory === cat.slug ? { textShadow: "0 0 10px rgba(0, 229, 255, 0.5)" } : {}}
           >
             {cat.name_az}
           </button>

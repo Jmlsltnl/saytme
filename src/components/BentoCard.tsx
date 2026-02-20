@@ -22,42 +22,35 @@ export const BentoCard = ({
   colorTheme = "blue",
   icon,
 }: BentoCardProps) => {
-  const getThemeColor = () => {
-    switch (colorTheme) {
-      case "blue": return "group-hover:border-cyan-500/50 group-hover:shadow-[0_0_20px_rgba(0,229,255,0.15)]";
-      case "pink": return "group-hover:border-pink-500/50 group-hover:shadow-[0_0_20px_rgba(255,0,127,0.15)]";
-      case "yellow": return "group-hover:border-yellow-400/50 group-hover:shadow-[0_0_20px_rgba(255,215,0,0.15)]";
-      default: return "group-hover:border-white/20";
-    }
-  };
-
+  
+  // Theme-based badge colors
   const getBadgeColor = () => {
-    switch (colorTheme) {
-      case "blue": return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
-      case "pink": return "bg-pink-500/10 text-pink-400 border-pink-500/20";
-      case "yellow": return "bg-yellow-400/10 text-yellow-400 border-yellow-400/20";
-      default: return "bg-white/10 text-white border-white/20";
-    }
+    return "bg-secondary text-secondary-foreground border-border/50";
   };
 
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-3xl glass-card cursor-pointer",
-        getThemeColor(),
+        "group relative overflow-hidden rounded-3xl cursor-pointer h-full border border-border shadow-sm transition-all duration-500 hover:shadow-xl",
+        "bg-card text-card-foreground", // Default theme colors
         className
       )}
     >
       {/* Background Image / Content */}
       <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-105">
-        {image && (
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
-          />
+        {image ? (
+          <>
+            <img
+              src={image}
+              alt={title}
+              className="w-full h-full object-cover transition-opacity duration-500"
+            />
+            {/* Gradient Overlay for Text Readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80 group-hover:opacity-70 transition-opacity" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-muted to-background" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent" />
       </div>
 
       {/* Content Overlay */}
@@ -65,20 +58,15 @@ export const BentoCard = ({
         {/* Icon for square cards */}
         {size === "square" && icon && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[80%] mb-4">
-             <div className="w-20 h-20 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-500">
+             <div className="w-20 h-20 rounded-2xl bg-background/20 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-500 text-white">
                {icon}
              </div>
           </div>
         )}
 
-        {size === "wide" && image && (
-          <div className="absolute right-0 top-0 bottom-0 w-1/2">
-             {/* Wide card specific layout handling would go here - handled via CSS generally */}
-          </div>
-        )}
-
         <div className={cn("space-y-3 transition-transform duration-300 group-hover:-translate-y-1", size === "square" && "text-center")}>
-          <h3 className={cn("font-bold text-white leading-tight", 
+          <h3 className={cn("font-bold leading-tight", 
+            image ? "text-white" : "text-card-foreground", // If image exists, text must be white (on dark overlay). If no image, theme color.
             size === "hero" ? "text-3xl md:text-4xl max-w-lg" : 
             size === "square" ? "text-lg" : 
             "text-xl"
@@ -87,11 +75,13 @@ export const BentoCard = ({
           </h3>
           
           <div className={cn("flex items-center gap-3 text-sm", size === "square" && "justify-center")}>
-            <div className="flex items-center gap-1.5 text-gray-400">
+            <div className={cn("flex items-center gap-1.5", image ? "text-gray-300" : "text-muted-foreground")}>
               <Clock className="w-3.5 h-3.5" />
               <span>{readTime}</span>
             </div>
-            <span className={cn("px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm", getBadgeColor())}>
+            <span className={cn("px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm", 
+              image ? "bg-white/10 text-white border-white/20" : "bg-secondary text-secondary-foreground border-border"
+            )}>
               {category}
             </span>
           </div>

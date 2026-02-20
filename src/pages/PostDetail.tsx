@@ -4,12 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { FloatingAbout } from "@/components/FloatingAbout";
 import { Database } from "@/integrations/supabase/types";
-import { Helmet } from "react-helmet-async";
 import { Clock, Calendar, ChevronLeft, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { az } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { SEO } from "@/components/SEO";
 
 type Post = Database['public']['Tables']['posts']['Row'] & {
   categories: Database['public']['Tables']['categories']['Row']
@@ -48,30 +48,21 @@ const PostDetail = () => {
     }
   };
 
-  const getBadgeStyles = (theme?: string) => {
-    switch (theme) {
-      case 'pink': return "bg-pink-500/10 text-pink-400 border-pink-500/20";
-      case 'yellow': return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
-      default: return "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
-    }
-  };
-
   if (loading) {
-    return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">Yüklənir...</div>;
+    return <div className="min-h-screen bg-background flex items-center justify-center text-foreground">Yüklənir...</div>;
   }
 
   if (!post) return null;
 
   return (
-    <div className="min-h-screen bg-[#050505] selection:bg-cyan-500/30 pb-20">
-      <Helmet>
-        <title>{post.seo_title || post.title_az} | MARKETİNQ NÜMUNƏLƏRİ</title>
-        <meta name="description" content={post.seo_description || post.title_az} />
-        <meta property="og:title" content={post.seo_title || post.title_az} />
-        <meta property="og:description" content={post.seo_description || post.title_az} />
-        {post.og_image_url && <meta property="og:image" content={post.og_image_url} />}
-        {post.thumbnail_url && <meta property="og:image" content={post.thumbnail_url} />}
-      </Helmet>
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 pb-20">
+      <SEO 
+        title={post.seo_title || post.title_az}
+        description={post.seo_description || ""}
+        image={post.thumbnail_url || undefined}
+        slug={`post/${post.slug}`}
+        type="article"
+      />
 
       <Navbar />
       <FloatingAbout />
@@ -81,60 +72,58 @@ const PostDetail = () => {
         {/* Back Button */}
         <Button 
           variant="ghost" 
-          className="mb-8 text-gray-400 hover:text-white hover:bg-white/5 pl-0 gap-2"
+          className="mb-8 pl-0 gap-2 hover:bg-transparent hover:text-primary"
           onClick={() => navigate('/')}
         >
           <ChevronLeft className="w-4 h-4" />
-          Geri qayıt
+          Ana səhifəyə qayıt
         </Button>
 
         {/* Hero Section */}
         <div className="space-y-6 mb-12">
-          <div className="flex items-center gap-4 text-sm">
-            <span className={cn("px-3 py-1 rounded-full border", getBadgeStyles(post.categories?.color_theme))}>
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <span className="px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary font-medium">
               {post.categories?.name_az || 'Kateqoriya'}
             </span>
-            <div className="flex items-center gap-1.5 text-gray-400">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
               <Clock className="w-4 h-4" />
               <span>{post.read_time_az}</span>
             </div>
             {post.published_at && (
-              <div className="flex items-center gap-1.5 text-gray-400">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Calendar className="w-4 h-4" />
                 <span>{format(new Date(post.published_at), "d MMMM yyyy", { locale: az })}</span>
               </div>
             )}
           </div>
 
-          <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight glow-text-blue">
+          <h1 className="text-3xl md:text-5xl font-bold leading-tight tracking-tight">
             {post.title_az}
           </h1>
         </div>
 
         {/* Featured Image */}
         {post.thumbnail_url && (
-          <div className="relative aspect-video rounded-3xl overflow-hidden mb-12 border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)] group">
+          <div className="relative aspect-video rounded-3xl overflow-hidden mb-12 border border-border shadow-lg">
             <img 
               src={post.thumbnail_url} 
               alt={post.title_az}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-60" />
           </div>
         )}
 
         {/* Content Body */}
-        <article className="prose prose-invert prose-lg max-w-none">
+        <article className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl">
           <div 
-            className="text-gray-300 leading-relaxed space-y-6 [&>p]:mb-6 [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:text-white [&>h2]:mt-12 [&>h2]:mb-6 [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:space-y-2"
             dangerouslySetInnerHTML={{ __html: post.content_html }} 
           />
         </article>
 
         {/* Share Section */}
-        <div className="mt-16 pt-8 border-t border-white/10 flex justify-between items-center">
-          <span className="text-gray-400">Bu məqaləni paylaş:</span>
-          <Button variant="outline" size="icon" className="rounded-full bg-white/5 border-white/10 text-white hover:bg-white/10">
+        <div className="mt-16 pt-8 border-t border-border flex justify-between items-center">
+          <span className="text-muted-foreground font-medium">Bu məqaləni paylaş:</span>
+          <Button variant="outline" size="icon" className="rounded-full">
             <Share2 className="w-4 h-4" />
           </Button>
         </div>

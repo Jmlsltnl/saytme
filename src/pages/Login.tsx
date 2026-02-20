@@ -1,29 +1,46 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
+import { SEO } from "@/components/SEO";
+import { useTheme } from "@/components/theme-provider";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const [siteName, setSiteName] = useState("Admin Panel");
 
   useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) navigate("/admin");
+    };
+    checkSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/admin");
-      }
+      if (session) navigate("/admin");
     });
+
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('site_settings').select('site_name').single();
+      if (data) setSiteName(data.site_name || "Admin Panel");
+    };
+    fetchSettings();
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-[#050505]">
+    <div className="min-h-screen bg-background transition-colors duration-300">
+      <SEO title="Giriş" />
       <Navbar />
       <div className="container mx-auto max-w-md pt-32 px-4">
-        <div className="glass-panel p-8 rounded-2xl border border-white/10">
-          <h1 className="text-2xl font-bold text-white mb-6 text-center">Admin Girişi</h1>
+        <div className="glass-panel p-8 rounded-2xl border border-border shadow-2xl">
+          <h1 className="text-2xl font-bold text-foreground mb-2 text-center">{siteName}</h1>
+          <p className="text-center text-muted-foreground mb-6 text-sm">İdarəetmə panelinə daxil olun</p>
+          
           <Auth
             supabaseClient={supabase}
             appearance={{
@@ -31,22 +48,31 @@ const Login = () => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#06b6d4',
-                    brandAccent: '#0891b2',
-                    inputText: 'white',
-                    inputBackground: 'rgba(255,255,255,0.05)',
-                  }
-                }
+                    brand: 'hsl(var(--primary))',
+                    brandAccent: 'hsl(var(--primary))',
+                    inputBackground: 'transparent',
+                    inputText: 'inherit',
+                  },
+                  borderWidths: {
+                    buttonBorderWidth: '1px',
+                    inputBorderWidth: '1px',
+                  },
+                  radii: {
+                    borderRadiusButton: '0.75rem',
+                    buttonBorderRadius: '0.75rem',
+                    inputBorderRadius: '0.5rem',
+                  },
+                },
               },
               className: {
-                container: 'text-white',
-                label: 'text-gray-400',
-                button: 'bg-cyan-600 hover:bg-cyan-700 text-white rounded-full',
-                input: 'rounded-xl border-white/10 bg-white/5',
+                container: 'text-foreground',
+                label: 'text-foreground/70',
+                button: 'bg-primary text-primary-foreground hover:bg-primary/90',
+                input: 'bg-background border-input text-foreground',
               }
             }}
             providers={[]}
-            theme="dark"
+            theme={theme === 'dark' ? 'dark' : 'light'}
           />
         </div>
       </div>
