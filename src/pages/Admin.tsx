@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -83,7 +85,6 @@ const Admin = () => {
   };
 
   const fetchSettings = async () => {
-    // FIX: Order by created_at DESC and limit 1 to handle potential duplicates
     const { data } = await supabase
       .from('site_settings')
       .select('*')
@@ -250,6 +251,16 @@ const Admin = () => {
       }
     };
 
+    const quillModules = {
+      toolbar: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+        ['link', 'image'],
+        ['clean']
+      ],
+    };
+
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in-50">
         <div className="lg:col-span-2 space-y-6">
@@ -278,11 +289,54 @@ const Admin = () => {
                     <Input value={formTime} onChange={(e) => setFormTime(e.target.value)} placeholder="3 dəq" required />
                   </div>
                 </div>
+                
                 <div className="grid gap-2">
-                  <Label>Məzmun (HTML)</Label>
-                  <Textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="font-mono min-h-[200px]" required />
+                  <Label>Məzmun</Label>
+                  <div className="prose-editor-wrapper">
+                    {/* Custom CSS for Quill Dark Mode compatibility */}
+                    <style>{`
+                      .prose-editor-wrapper .ql-toolbar {
+                        border-color: hsl(var(--border));
+                        border-top-left-radius: 0.5rem;
+                        border-top-right-radius: 0.5rem;
+                        background-color: hsl(var(--muted));
+                      }
+                      .prose-editor-wrapper .ql-container {
+                        border-color: hsl(var(--border));
+                        border-bottom-left-radius: 0.5rem;
+                        border-bottom-right-radius: 0.5rem;
+                        background-color: hsl(var(--background));
+                        color: hsl(var(--foreground));
+                        font-family: inherit;
+                        font-size: 1rem;
+                        min-height: 250px;
+                      }
+                      .prose-editor-wrapper .ql-picker-label {
+                        color: hsl(var(--foreground));
+                      }
+                      .prose-editor-wrapper .ql-stroke {
+                        stroke: hsl(var(--foreground));
+                      }
+                      .prose-editor-wrapper .ql-fill {
+                        fill: hsl(var(--foreground));
+                      }
+                      .prose-editor-wrapper .ql-picker-options {
+                        background-color: hsl(var(--popover));
+                        color: hsl(var(--popover-foreground));
+                        border-color: hsl(var(--border));
+                      }
+                    `}</style>
+                    <ReactQuill 
+                      theme="snow"
+                      value={formContent} 
+                      onChange={setFormContent} 
+                      modules={quillModules}
+                      className="h-64 mb-12" // mb-12 to account for toolbar height
+                    />
+                  </div>
                 </div>
-                <div className="p-4 bg-muted/30 border rounded-lg space-y-4">
+
+                <div className="p-4 bg-muted/30 border rounded-lg space-y-4 mt-8">
                   <h4 className="text-sm font-semibold flex items-center gap-2"><Globe className="w-4 h-4" /> SEO Ayarları</h4>
                   <div className="grid gap-2">
                     <Label>Meta Title</Label>
