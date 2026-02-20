@@ -4,15 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { FloatingAbout } from "@/components/FloatingAbout";
 import { Database } from "@/integrations/supabase/types";
-import { Clock, Calendar, ChevronLeft, Share2, Copy } from "lucide-react";
+import { Clock, Calendar, ChevronLeft, Share2, Copy, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { az } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { toast } from "sonner";
 import { BentoCard } from "@/components/BentoCard";
 import { getIconForCategory } from "@/utils/icon-mapping";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type Post = Database['public']['Tables']['posts']['Row'] & {
   categories: Database['public']['Tables']['categories']['Row']
@@ -24,18 +24,22 @@ const PostDetail = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [siteSettings, setSiteSettings] = useState<{favicon_url: string | null} | null>(null);
+  const [siteSettings, setSiteSettings] = useState<{
+    favicon_url: string | null, 
+    author_name: string | null, 
+    author_image: string | null 
+  } | null>(null);
 
   useEffect(() => {
     if (slug) {
-      window.scrollTo(0, 0); // Scroll to top on navigation
+      window.scrollTo(0, 0); 
       fetchPost(slug);
     }
     fetchSettings();
   }, [slug]);
 
   const fetchSettings = async () => {
-    const { data } = await supabase.from('site_settings').select('favicon_url').single();
+    const { data } = await supabase.from('site_settings').select('favicon_url, author_name, author_image').single();
     if (data) setSiteSettings(data);
   };
 
@@ -44,10 +48,7 @@ const PostDetail = () => {
     try {
       const { data, error } = await supabase
         .from('posts')
-        .select(`
-          *,
-          categories:category_id (*)
-        `)
+        .select(`*, categories:category_id (*)`)
         .eq('slug', slug)
         .single();
 
@@ -72,43 +73,30 @@ const PostDetail = () => {
        .select(`*, categories:category_id (*)`)
        .eq('category_id', categoryId)
        .neq('id', currentPostId)
-       .limit(4);
+       .limit(3); // 3 related posts looks better in grid
      
      if (data) setRelatedPosts(data as unknown as Post[]);
   };
 
   const handleShare = async () => {
     if (!post) return;
-    
     const shareData = {
       title: post.title_az,
       text: post.seo_description || post.title_az,
       url: window.location.href,
     };
-
     if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        console.log("Error sharing", err);
-      }
+      try { await navigator.share(shareData); } catch (err) { console.log("Error sharing", err); }
     } else {
-      // Fallback to clipboard
       navigator.clipboard.writeText(window.location.href);
-      toast.success("Link kopyalandı!", {
-         description: "Dostlarınızla paylaşa bilərsiniz.",
-         icon: <Copy className="w-4 h-4" />
-      });
+      toast.success("Link kopyalandı!");
     }
   };
 
-  if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center text-foreground">Yüklənir...</div>;
-  }
-
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>;
   if (!post) return null;
 
-  // Structured Data (Schema.org) for Google
+  // Schema for SEO
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -117,46 +105,11 @@ const PostDetail = () => {
     "image": post.thumbnail_url ? [post.thumbnail_url] : [],
     "datePublished": post.published_at,
     "dateModified": post.updated_at || post.published_at,
-    "author": {
-      "@type": "Organization",
-      "name": "Sayt.me"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Sayt.me",
-      "logo": {
-        "@type": "ImageObject",
-        "url": window.location.origin + "/placeholder.svg" // Fallback or dynamic logo
-      }
-    },
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": window.location.href
-    }
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [{
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Ana Səhifə",
-      "item": window.location.origin
-    }, {
-      "@type": "ListItem",
-      "position": 2,
-      "name": post.categories?.name_az || "Blog",
-      "item": `${window.location.origin}/?category=${post.categories?.slug}`
-    }, {
-      "@type": "ListItem",
-      "position": 3,
-      "name": post.title_az
-    }]
+    "author": { "@type": "Person", "name": siteSettings?.author_name || "Admin" }
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 pb-20">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 pb-32">
       <SEO 
         title={post.seo_title || post.title_az}
         description={post.seo_description || ""}
@@ -165,112 +118,138 @@ const PostDetail = () => {
         type="article"
         publishedTime={post.published_at}
         modifiedTime={post.updated_at}
-        schema={[articleSchema, breadcrumbSchema]}
+        schema={[articleSchema]}
         favicon={siteSettings?.favicon_url || undefined}
       />
 
       <Navbar />
       <FloatingAbout />
 
-      <main className="max-w-4xl mx-auto px-4 md:px-6 pt-32">
-        
-        {/* Back Button */}
-        <Button 
-          variant="ghost" 
-          className="mb-8 pl-0 gap-2 hover:bg-transparent hover:text-primary transition-all duration-300 hover:-translate-x-1"
-          onClick={() => navigate('/')}
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Ana səhifəyə qayıt
-        </Button>
+      {/* Progress Bar could be added here later */}
 
-        {/* Hero Section */}
-        <div className="space-y-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary font-medium">
-              {post.categories?.name_az || 'Kateqoriya'}
-            </span>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              <span>{post.read_time_az}</span>
-            </div>
-            {post.published_at && (
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                <span>{format(new Date(post.published_at), "d MMMM yyyy", { locale: az })}</span>
+      <main className="pt-32">
+        {/* Article Header */}
+        <div className="max-w-3xl mx-auto px-6 text-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+           <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-8 group">
+              <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
+              Ana Səhifə
+           </Link>
+
+           <div className="flex items-center justify-center gap-3 mb-6">
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-primary/10 text-primary`}>
+                {post.categories?.name_az || 'Blog'}
+              </span>
+              <span className="text-muted-foreground text-xs font-medium flex items-center gap-1">
+                 <Clock className="w-3 h-3" /> {post.read_time_az} oxu
+              </span>
+           </div>
+
+           <h1 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15] mb-8 text-foreground text-balance">
+             {post.title_az}
+           </h1>
+
+           <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground border-t border-b border-border/50 py-4 w-fit mx-auto px-6">
+              <div className="flex items-center gap-2">
+                 <Avatar className="w-8 h-8 border border-border">
+                    <AvatarImage src={siteSettings?.author_image || ""} />
+                    <AvatarFallback>A</AvatarFallback>
+                 </Avatar>
+                 <span className="font-medium text-foreground">{siteSettings?.author_name || "Müəllif"}</span>
               </div>
-            )}
-          </div>
-
-          <h1 className="text-3xl md:text-5xl font-bold leading-tight tracking-tight text-balance">
-            {post.title_az}
-          </h1>
+              <span className="text-border mx-2">•</span>
+              <div className="flex items-center gap-2">
+                 <Calendar className="w-4 h-4" />
+                 {post.published_at && format(new Date(post.published_at), "d MMMM yyyy", { locale: az })}
+              </div>
+           </div>
         </div>
 
-        {/* Featured Image */}
+        {/* Featured Image - Wide but not full screen */}
         {post.thumbnail_url && (
-          <div className="relative aspect-video rounded-3xl overflow-hidden mb-12 border border-border shadow-lg animate-in zoom-in-95 duration-700 delay-100">
-            <img 
-              src={post.thumbnail_url} 
-              alt={post.title_az}
-              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-            />
+          <div className="max-w-5xl mx-auto px-4 md:px-6 mb-16 animate-in zoom-in-95 duration-700 delay-100">
+             <div className="relative aspect-[21/9] md:aspect-[2/1] rounded-3xl overflow-hidden shadow-2xl border border-border/50">
+                <img 
+                  src={post.thumbnail_url} 
+                  alt={post.title_az} 
+                  className="w-full h-full object-cover"
+                />
+             </div>
           </div>
         )}
 
-        {/* Content Body */}
-        {/* Added strict css rules to children to prevent hyphenation */}
-        <article className="prose prose-lg dark:prose-invert max-w-none 
-          prose-headings:font-bold prose-headings:tracking-tight 
-          prose-p:leading-relaxed prose-p:text-muted-foreground/90 
-          prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline
-          prose-img:rounded-3xl prose-img:shadow-md prose-img:w-full prose-img:border prose-img:border-border/50
-          prose-li:marker:text-primary 
-          prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-muted/30 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-lg prose-blockquote:font-medium
-          prose-strong:text-foreground prose-strong:font-bold
-          animate-in fade-in duration-700 delay-200 w-full overflow-hidden">
-          <div 
-            className="[&_*]:hyphens-none [&_*]:break-words [&_*]:text-justify md:[&_*]:text-left"
-            style={{ hyphens: 'none', WebkitHyphens: 'none', wordBreak: 'normal', overflowWrap: 'break-word' }}
-            dangerouslySetInnerHTML={{ __html: post.content_html }} 
-          />
-        </article>
+        {/* Article Content */}
+        <div className="max-w-3xl mx-auto px-6">
+          <article className="
+            prose prose-lg md:prose-xl dark:prose-invert max-w-none
+            prose-p:text-muted-foreground prose-p:leading-8 prose-p:font-normal
+            prose-headings:text-foreground prose-headings:font-bold prose-headings:tracking-tight prose-headings:mt-12 prose-headings:mb-6
+            prose-h2:text-3xl prose-h3:text-2xl
+            prose-a:text-primary prose-a:font-medium prose-a:underline prose-a:underline-offset-4 hover:prose-a:text-primary/80
+            prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-6 prose-blockquote:italic prose-blockquote:text-foreground prose-blockquote:font-medium prose-blockquote:bg-muted/20 prose-blockquote:py-2 prose-blockquote:rounded-r-lg
+            prose-img:rounded-2xl prose-img:shadow-lg prose-img:my-10 prose-img:border prose-img:border-border
+            prose-li:text-muted-foreground prose-li:marker:text-primary prose-li:leading-7
+            prose-strong:text-foreground prose-strong:font-bold
+            prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-sm prose-code:before:content-[''] prose-code:after:content-['']
+            [&_p]:mb-6 [&_ul]:mb-6 [&_ol]:mb-6
+            text-left
+          ">
+            <div dangerouslySetInnerHTML={{ __html: post.content_html }} />
+          </article>
 
-        {/* Share Section */}
-        <div className="mt-16 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-          <span className="text-muted-foreground font-medium">Bu faydalı məqaləni paylaşaraq dəstək olun:</span>
-          <Button variant="outline" size="lg" className="rounded-full gap-2 hover:bg-primary hover:text-primary-foreground transition-all duration-300" onClick={handleShare}>
-            <Share2 className="w-4 h-4" />
-            Paylaş
-          </Button>
+          {/* Tags / Share / Navigation Footer */}
+          <div className="mt-16 pt-8 border-t border-border">
+             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex gap-2">
+                   {/* Tags could go here if we had them */}
+                </div>
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                   <Button onClick={handleShare} variant="outline" className="w-full md:w-auto rounded-full gap-2 hover:bg-muted hover:text-foreground transition-all">
+                      <Share2 className="w-4 h-4" /> Paylaş
+                   </Button>
+                   <Button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} variant="ghost" className="rounded-full">
+                      Yuxarı
+                   </Button>
+                </div>
+             </div>
+          </div>
         </div>
-
-        {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <div className="mt-20 pt-10 border-t border-border">
-             <div className="flex items-center justify-between mb-8">
-                <h3 className="text-2xl font-bold">Oxşar Məqalələr</h3>
-                <Link to="/" className="text-sm text-primary hover:underline">Hamısına bax</Link>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {relatedPosts.map((related) => (
-                   <Link to={`/post/${related.slug}`} key={related.id} className="block h-[320px] transform hover:-translate-y-1 transition-transform duration-300">
-                      <BentoCard 
-                        title={related.title_az}
-                        category={related.categories?.name_az || "Blog"}
-                        readTime={related.read_time_az || "3 dəq"}
-                        image={related.thumbnail_url || undefined}
-                        size="standard"
-                        icon={related.card_size === 'square' ? getIconForCategory(related.categories?.slug || '') : undefined}
-                        className="h-full shadow-md hover:shadow-xl border-muted"
-                      />
-                   </Link>
-                ))}
-             </div>
-          </div>
-        )}
-
       </main>
+
+      {/* Related Posts Section */}
+      {relatedPosts.length > 0 && (
+        <section className="mt-24 py-16 bg-muted/30 border-t border-border">
+           <div className="max-w-7xl mx-auto px-6">
+              <div className="flex items-center justify-between mb-10">
+                 <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Digər maraqlı yazılar</h2>
+                 <Link to="/" className="hidden md:flex items-center gap-1 text-sm font-medium text-primary hover:underline underline-offset-4">
+                    Bütün yazılar <ArrowRight className="w-4 h-4" />
+                 </Link>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 {relatedPosts.map((related) => (
+                    <Link to={`/post/${related.slug}`} key={related.id} className="group block h-full">
+                       <BentoCard 
+                         title={related.title_az}
+                         category={related.categories?.name_az || "Blog"}
+                         readTime={related.read_time_az || "3 dəq"}
+                         image={related.thumbnail_url || undefined}
+                         size="standard" // Force standard size for consistency in footer
+                         icon={related.card_size === 'square' ? getIconForCategory(related.categories?.slug || '') : undefined}
+                         className="h-[340px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                       />
+                    </Link>
+                 ))}
+              </div>
+              
+              <div className="mt-8 text-center md:hidden">
+                 <Link to="/" className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                    Bütün yazılar <ArrowRight className="w-4 h-4" />
+                 </Link>
+              </div>
+           </div>
+        </section>
+      )}
     </div>
   );
 };
