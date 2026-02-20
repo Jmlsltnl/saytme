@@ -30,7 +30,8 @@ import {
   Megaphone,
   LineChart,
   Bot,
-  FileCode
+  FileCode,
+  User
 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { SEO } from "@/components/SEO";
@@ -297,39 +298,6 @@ const Admin = () => {
                 <div className="grid gap-2">
                   <Label>Məzmun</Label>
                   <div className="prose-editor-wrapper">
-                    {/* Custom CSS for Quill Dark Mode compatibility */}
-                    <style>{`
-                      .prose-editor-wrapper .ql-toolbar {
-                        border-color: hsl(var(--border));
-                        border-top-left-radius: 0.5rem;
-                        border-top-right-radius: 0.5rem;
-                        background-color: hsl(var(--muted));
-                      }
-                      .prose-editor-wrapper .ql-container {
-                        border-color: hsl(var(--border));
-                        border-bottom-left-radius: 0.5rem;
-                        border-bottom-right-radius: 0.5rem;
-                        background-color: hsl(var(--background));
-                        color: hsl(var(--foreground));
-                        font-family: inherit;
-                        font-size: 1rem;
-                        min-height: 250px;
-                      }
-                      .prose-editor-wrapper .ql-picker-label {
-                        color: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-stroke {
-                        stroke: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-fill {
-                        fill: hsl(var(--foreground));
-                      }
-                      .prose-editor-wrapper .ql-picker-options {
-                        background-color: hsl(var(--popover));
-                        color: hsl(var(--popover-foreground));
-                        border-color: hsl(var(--border));
-                      }
-                    `}</style>
                     <ReactQuill 
                       theme="snow"
                       value={formContent} 
@@ -502,8 +470,13 @@ const Admin = () => {
     const [gtmId, setGtmId] = useState(settings?.google_tag_manager_id || "");
     const [gscCode, setGscCode] = useState(settings?.google_search_console_code || "");
     
+    // New Fields
+    const [authorName, setAuthorName] = useState(settings?.author_name || "");
+    const [aboutText, setAboutText] = useState(settings?.about_text || "");
+
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [favFile, setFavFile] = useState<File | null>(null);
+    const [authorFile, setAuthorFile] = useState<File | null>(null);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -516,6 +489,8 @@ const Admin = () => {
             setGaId(settings.google_analytics_id || "");
             setGtmId(settings.google_tag_manager_id || "");
             setGscCode(settings.google_search_console_code || "");
+            setAuthorName(settings.author_name || "");
+            setAboutText(settings.about_text || "");
         }
     }, [settings]);
 
@@ -525,6 +500,7 @@ const Admin = () => {
       try {
         let logoUrl = settings?.logo_url;
         let favUrl = settings?.favicon_url;
+        let authorImgUrl = settings?.author_image;
 
         const upload = async (f: File) => {
            const fileExt = f.name.split('.').pop();
@@ -539,6 +515,7 @@ const Admin = () => {
 
         if (logoFile) logoUrl = await upload(logoFile);
         if (favFile) favUrl = await upload(favFile);
+        if (authorFile) authorImgUrl = await upload(authorFile);
 
         const payload = {
           site_name: sName,
@@ -550,7 +527,10 @@ const Admin = () => {
           favicon_url: favUrl,
           google_analytics_id: gaId || null,
           google_tag_manager_id: gtmId || null,
-          google_search_console_code: gscCode || null
+          google_search_console_code: gscCode || null,
+          author_name: authorName,
+          about_text: aboutText,
+          author_image: authorImgUrl
         };
 
         let targetId = settings?.id;
@@ -574,6 +554,7 @@ const Admin = () => {
         toast.success("Ayarlar yadda saxlanıldı!");
         setLogoFile(null);
         setFavFile(null);
+        setAuthorFile(null);
       } catch (e: any) {
         console.error(e);
         toast.error("Xəta: " + e.message);
@@ -601,6 +582,32 @@ const Admin = () => {
                  <div className="grid gap-2">
                    <Label>Təsvir (SEO Description)</Label>
                    <Textarea value={sDesc} onChange={(e) => setSDesc(e.target.value)} placeholder="Google axtarış nəticələri üçün..." />
+                 </div>
+              </div>
+
+               {/* About / Author Section */}
+               <div className="space-y-4">
+                 <h3 className="font-semibold flex items-center gap-2 border-b pb-2"><User className="w-4 h-4" /> Müəllif və Haqqında</h3>
+                 <div className="grid grid-cols-3 gap-6">
+                    <div className="col-span-1 space-y-2">
+                       <Label>Müəllif Şəkli</Label>
+                       <div className="border border-dashed rounded-lg p-4 text-center space-y-2">
+                          {settings?.author_image ? (
+                            <img src={settings.author_image} className="h-16 w-16 mx-auto rounded-full object-cover" alt="Author" />
+                          ) : <User className="h-8 w-8 mx-auto text-muted-foreground" />}
+                          <Input type="file" onChange={(e) => setAuthorFile(e.target.files?.[0] || null)} className="text-xs" accept="image/*" />
+                       </div>
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                       <div className="grid gap-2">
+                          <Label>Müəllif Adı</Label>
+                          <Input value={authorName} onChange={(e) => setAuthorName(e.target.value)} placeholder="Məs: Əli Vəliyev" />
+                       </div>
+                       <div className="grid gap-2">
+                          <Label>Haqqında Mətni</Label>
+                          <Textarea value={aboutText} onChange={(e) => setAboutText(e.target.value)} className="h-24" placeholder="Saytın məqsədi və ya özünüz haqqında qısa məlumat..." />
+                       </div>
+                    </div>
                  </div>
               </div>
 

@@ -24,6 +24,9 @@ export interface Database {
           google_analytics_id: string | null
           google_tag_manager_id: string | null
           google_search_console_code: string | null
+          author_name: string | null
+          author_image: string | null
+          about_text: string | null
         }
         Insert: {
           id?: string
@@ -39,6 +42,9 @@ export interface Database {
           google_analytics_id?: string | null
           google_tag_manager_id?: string | null
           google_search_console_code?: string | null
+          author_name?: string | null
+          author_image?: string | null
+          about_text?: string | null
         }
         Update: {
           id?: string
@@ -54,6 +60,9 @@ export interface Database {
           google_analytics_id?: string | null
           google_tag_manager_id?: string | null
           google_search_console_code?: string | null
+          author_name?: string | null
+          author_image?: string | null
+          about_text?: string | null
         }
       }
       categories: {
