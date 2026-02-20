@@ -28,7 +28,9 @@ import {
   Globe,
   X,
   Megaphone,
-  LineChart
+  LineChart,
+  Bot,
+  FileCode
 } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { SEO } from "@/components/SEO";
@@ -54,7 +56,7 @@ const StatCard = ({ title, value, icon: Icon, description }: { title: string, va
 
 const Admin = () => {
   const navigate = useNavigate();
-  const [activeView, setActiveView] = useState<'dashboard' | 'posts' | 'categories' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'posts' | 'categories' | 'settings' | 'seo-files'>('dashboard');
   const [loading, setLoading] = useState(true);
   
   // Data State
@@ -295,6 +297,39 @@ const Admin = () => {
                 <div className="grid gap-2">
                   <Label>Məzmun</Label>
                   <div className="prose-editor-wrapper">
+                    {/* Custom CSS for Quill Dark Mode compatibility */}
+                    <style>{`
+                      .prose-editor-wrapper .ql-toolbar {
+                        border-color: hsl(var(--border));
+                        border-top-left-radius: 0.5rem;
+                        border-top-right-radius: 0.5rem;
+                        background-color: hsl(var(--muted));
+                      }
+                      .prose-editor-wrapper .ql-container {
+                        border-color: hsl(var(--border));
+                        border-bottom-left-radius: 0.5rem;
+                        border-bottom-right-radius: 0.5rem;
+                        background-color: hsl(var(--background));
+                        color: hsl(var(--foreground));
+                        font-family: inherit;
+                        font-size: 1rem;
+                        min-height: 250px;
+                      }
+                      .prose-editor-wrapper .ql-picker-label {
+                        color: hsl(var(--foreground));
+                      }
+                      .prose-editor-wrapper .ql-stroke {
+                        stroke: hsl(var(--foreground));
+                      }
+                      .prose-editor-wrapper .ql-fill {
+                        fill: hsl(var(--foreground));
+                      }
+                      .prose-editor-wrapper .ql-picker-options {
+                        background-color: hsl(var(--popover));
+                        color: hsl(var(--popover-foreground));
+                        border-color: hsl(var(--border));
+                      }
+                    `}</style>
                     <ReactQuill 
                       theme="snow"
                       value={formContent} 
@@ -641,6 +676,66 @@ const Admin = () => {
     );
   };
 
+  const SeoFilesManager = () => {
+     const PROJECT_REF = "qnpoftjwfwzgxmuzqauc"; // Project ID
+     const functionsBaseUrl = `https://${PROJECT_REF}.supabase.co/functions/v1`;
+
+     const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success("Link kopyalandı!");
+     };
+
+     return (
+        <div className="max-w-4xl mx-auto animate-in fade-in-50 space-y-6">
+           <Card>
+              <CardHeader>
+                 <CardTitle className="flex items-center gap-2"><Bot className="w-5 h-5 text-primary" /> Dinamik SEO Faylları</CardTitle>
+                 <CardDescription>
+                    Saytınızın axtarış sistemləri və AI botları tərəfindən oxunması üçün dinamik fayllar.
+                    Bu fayllar Supabase Edge Functions vasitəsilə avtomatik yaradılır.
+                 </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-6">
+                 
+                 <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/20">
+                    <div className="space-y-1">
+                       <h4 className="font-semibold flex items-center gap-2"><FileCode className="w-4 h-4" /> sitemap.xml</h4>
+                       <p className="text-sm text-muted-foreground">Bütün məqalə və kateqoriyaların xəritəsi. Google Search Console-a bu linki əlavə edin.</p>
+                    </div>
+                    <div className="flex gap-2">
+                       <Button variant="outline" size="sm" onClick={() => window.open(`${functionsBaseUrl}/sitemap`, '_blank')}>Görüntülə</Button>
+                       <Button size="sm" onClick={() => copyToClipboard(`${functionsBaseUrl}/sitemap`)}>Linki Kopyala</Button>
+                    </div>
+                 </div>
+
+                 <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/20">
+                    <div className="space-y-1">
+                       <h4 className="font-semibold flex items-center gap-2"><Bot className="w-4 h-4" /> robots.txt</h4>
+                       <p className="text-sm text-muted-foreground">Botlara hansı səhifələrə girib-girməyəcəyini deyən fayl. Avtomatik olaraq sitemap-a yönləndirir.</p>
+                    </div>
+                    <div className="flex gap-2">
+                       <Button variant="outline" size="sm" onClick={() => window.open(`${functionsBaseUrl}/robots`, '_blank')}>Görüntülə</Button>
+                       <Button size="sm" onClick={() => copyToClipboard(`${functionsBaseUrl}/robots`)}>Linki Kopyala</Button>
+                    </div>
+                 </div>
+
+                 <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/20">
+                    <div className="space-y-1">
+                       <h4 className="font-semibold flex items-center gap-2"><Globe className="w-4 h-4" /> llms.txt</h4>
+                       <p className="text-sm text-muted-foreground">AI botları (ChatGPT, Claude və s.) üçün saytın xülasəsi. Yeni web standartıdır.</p>
+                    </div>
+                    <div className="flex gap-2">
+                       <Button variant="outline" size="sm" onClick={() => window.open(`${functionsBaseUrl}/llms`, '_blank')}>Görüntülə</Button>
+                       <Button size="sm" onClick={() => copyToClipboard(`${functionsBaseUrl}/llms`)}>Linki Kopyala</Button>
+                    </div>
+                 </div>
+
+              </CardContent>
+           </Card>
+        </div>
+     );
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
 
   return (
@@ -684,6 +779,13 @@ const Admin = () => {
           >
             <Settings className="mr-2 h-4 w-4" /> Ayarlar
           </Button>
+          <Button 
+            variant={activeView === 'seo-files' ? 'secondary' : 'ghost'} 
+            className="w-full justify-start" 
+            onClick={() => setActiveView('seo-files')}
+          >
+            <Bot className="mr-2 h-4 w-4" /> SEO & Botlar
+          </Button>
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
           <Button variant="outline" className="w-full text-destructive hover:text-destructive" onClick={handleLogout}>
@@ -699,6 +801,7 @@ const Admin = () => {
           {activeView === 'posts' && <PostsManager />}
           {activeView === 'categories' && <CategoriesManager />}
           {activeView === 'settings' && <SettingsManager />}
+          {activeView === 'seo-files' && <SeoFilesManager />}
         </div>
       </main>
     </div>
