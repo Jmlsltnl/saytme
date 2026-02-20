@@ -30,7 +30,10 @@ export const seedDatabase = async () => {
 
     if (catError) {
       console.error("Category seed error details:", catError);
-      throw new Error("Kateqoriya xətası: " + catError.message + " (Details: " + catError.details + ")");
+      if (catError.code === "42501") {
+        throw new Error("İcazə rədd edildi (RLS Policy). Zəhmət olmasa Supabase SQL Editor-da RLS siyasətlərini yeniləyin.");
+      }
+      throw new Error("Kateqoriya xətası: " + catError.message);
     }
 
     if (!insertedCategories) throw new Error("Kateqoriyalar yaradılmadı");
@@ -122,7 +125,13 @@ export const seedDatabase = async () => {
       .from("posts")
       .upsert(posts, { onConflict: "slug" });
 
-    if (postError) throw new Error("Məqalə xətası: " + postError.message);
+    if (postError) {
+      console.error("Post seed error details:", postError);
+       if (postError.code === "42501") {
+        throw new Error("İcazə rədd edildi (RLS Policy). Zəhmət olmasa Supabase SQL Editor-da RLS siyasətlərini yeniləyin.");
+      }
+      throw new Error("Məqalə xətası: " + postError.message);
+    }
 
     toast.success("Demo məlumatlar uğurla yükləndi!", { id: toastId });
     return true;
