@@ -177,7 +177,7 @@ const PostDetail = () => {
         {/* Back Button */}
         <Button 
           variant="ghost" 
-          className="mb-8 pl-0 gap-2 hover:bg-transparent hover:text-primary"
+          className="mb-8 pl-0 gap-2 hover:bg-transparent hover:text-primary transition-all duration-300 hover:-translate-x-1"
           onClick={() => navigate('/')}
         >
           <ChevronLeft className="w-4 h-4" />
@@ -213,34 +213,45 @@ const PostDetail = () => {
             <img 
               src={post.thumbnail_url} 
               alt={post.title_az}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
             />
           </div>
         )}
 
         {/* Content Body */}
-        {/* Added break-words, w-full, overflow-hidden to fix responsiveness */}
-        <article className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl prose-img:w-full animate-in fade-in duration-700 delay-200 break-words w-full overflow-hidden">
+        <article className="prose prose-lg dark:prose-invert max-w-none 
+          prose-headings:font-bold prose-headings:tracking-tight 
+          prose-p:leading-relaxed prose-p:text-muted-foreground/90 
+          prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline
+          prose-img:rounded-3xl prose-img:shadow-md prose-img:w-full prose-img:border prose-img:border-border/50
+          prose-li:marker:text-primary 
+          prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-muted/30 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-lg prose-blockquote:font-medium
+          prose-strong:text-foreground prose-strong:font-bold
+          animate-in fade-in duration-700 delay-200 break-words w-full overflow-hidden">
           <div 
             dangerouslySetInnerHTML={{ __html: post.content_html }} 
           />
         </article>
 
         {/* Share Section */}
-        <div className="mt-16 pt-8 border-t border-border flex justify-between items-center">
-          <span className="text-muted-foreground font-medium">Bu məqaləni paylaş:</span>
-          <Button variant="outline" size="icon" className="rounded-full" onClick={handleShare}>
+        <div className="mt-16 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
+          <span className="text-muted-foreground font-medium">Bu faydalı məqaləni paylaşaraq dəstək olun:</span>
+          <Button variant="outline" size="lg" className="rounded-full gap-2 hover:bg-primary hover:text-primary-foreground transition-all duration-300" onClick={handleShare}>
             <Share2 className="w-4 h-4" />
+            Paylaş
           </Button>
         </div>
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
           <div className="mt-20 pt-10 border-t border-border">
-             <h3 className="text-2xl font-bold mb-8">Oxşar Məqalələr</h3>
+             <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold">Oxşar Məqalələr</h3>
+                <Link to="/" className="text-sm text-primary hover:underline">Hamısına bax</Link>
+             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {relatedPosts.map((related) => (
-                   <Link to={`/post/${related.slug}`} key={related.id} className="block h-[300px]">
+                   <Link to={`/post/${related.slug}`} key={related.id} className="block h-[320px] transform hover:-translate-y-1 transition-transform duration-300">
                       <BentoCard 
                         title={related.title_az}
                         category={related.categories?.name_az || "Blog"}
@@ -248,7 +259,7 @@ const PostDetail = () => {
                         image={related.thumbnail_url || undefined}
                         size="standard"
                         icon={related.card_size === 'square' ? getIconForCategory(related.categories?.slug || '') : undefined}
-                        className="h-full"
+                        className="h-full shadow-md hover:shadow-xl border-muted"
                       />
                    </Link>
                 ))}
